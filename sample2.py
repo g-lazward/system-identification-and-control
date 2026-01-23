@@ -1,4 +1,5 @@
 import IdentificationTools as ident
+import ControllerTools as ctrl
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
@@ -20,9 +21,9 @@ if __name__ == "__main__":
     zi = signal.lfilter_zi(b, a) * 0.0
 
     # コントローラー
-    controller:ident.SimplePIDController = ident.SimplePIDController(kp=0.5, ki=2, kd=0)
+    controller:ctrl.SimplePIDController = ctrl.SimplePIDController(kp=0.5, ki=2, kd=0)
     # scipy用のコントローラー
-    controller_scipy:ident.SimplePIDController = ident.SimplePIDController(kp=0.5, ki=2, kd=0)
+    controller_scipy:ctrl.SimplePIDController = ctrl.SimplePIDController(kp=0.5, ki=2, kd=0)
 
     # 時間配列
     time = np.arange(0, 100, 1)
@@ -46,17 +47,16 @@ if __name__ == "__main__":
     input = np.zeros_like(time, dtype=float)
     input_scipy = np.zeros_like(time, dtype=float)
 
-
     for step in range(len(time)-1):
         # 自作プログラムの閉ループ系
         error[step] = reference[step] - output[step]
-        input[step] = controller(error[step])
-        output[step+1] = plant(input[step])
+        input[step] = controller(np.array([[error[step]]], dtype=float))[0]
+        output[step+1] = plant(np.array([[input[step]]], dtype=float))[0]
     
         
         # scipyを使った閉ループ系
         error_scipy[step] = reference[step] - output_scipy[step]
-        input_scipy[step] = controller_scipy(error_scipy[step])
+        input_scipy[step] = controller_scipy(np.array([[error_scipy[step]]], dtype=float))[0]
         next_output, zi = signal.lfilter(b, a, [input_scipy[step]], zi=zi)
         output_scipy[step+1] = next_output[0]
 

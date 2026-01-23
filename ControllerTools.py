@@ -10,7 +10,6 @@ from cvxopt.solvers import qp
 
 FloatArray1D = NDArray[np.floating]
 FloatArray2D = NDArray[np.floating]
-Scalar = Union[float, np.floating]
 
 # Linear Discrete State-Space model
 @dataclass
@@ -19,7 +18,7 @@ class LDss:
     B: FloatArray2D
     C: FloatArray2D
 
-class MPC:
+class MPC(ident.Function):
     def __init__(self, system: LDss, 
                  Hp: int, # 予測ホライズン
                  Hu: int, # 制御ホライズン
@@ -143,7 +142,10 @@ class MPC:
     ## @brief 呼び出して使用するメイン処理
     # @args T: 参照信号ベクトル(出力信号が複数ある場合は行列)，y: 制御対象の出力(状態観測器で使用)
     # @output: 制御対象への入力u(k|k)，推定状態ベクトル\hat{x}(k+1|k)
-    def forward(self, T:FloatArray2D, y: FloatArray2D)->dict:
+    def forward(self, inputs: ident.Inputs)->ident.Outputs:
+        T: FloatArray2D = inputs[0]
+        y: FloatArray2D = inputs[1]
+        
         assert T.shape == (self.output_dim*self.Hp, 1), f"Tは(output_dim*Hp, 1)のサイズで与えてください．現在：output_dim:{self.output_dim}, Hp:{self.Hp}"
         
         # 入力の差分を計算
@@ -154,4 +156,27 @@ class MPC:
         # \hat{x}(k+1|k) = observer(\hat{x}(k|k-1), u(k), y(k))
         self.state = self._observeState(self.state, self.u, y)
         
-        return {"u": self.u, "state": self.state}
+        return [self.u, self.state]
+
+
+
+class SimplePIDController(ident.Function):
+    def __init__(self, kp:float, ki:float, kd:float, Ts:float=1.0)->None:
+        self.kp = float(kp)
+        self.ki = float(ki)
+        self.kd = float(kd)
+        self.Ts = float(Ts)
+
+        self.e_sum: float = 0
+        self.prev_e: float = 0
+
+    def forward(self, u: ident.Inputs)->ident.Outputs:
+        # 誤差信号に表記を変える
+        e = u[0].item()
+        # 誤差信号を加算
+        self.e_sum += e
+        y = self.kp*e + self.ki*self.e_sum*self.Ts + self.kd*(e-self.prev_e)/self.Ts
+
+        # 1ステップ前の誤差信号を保存
+        self.prev_e = e
+        return (y, )

@@ -59,17 +59,15 @@ model_predicted_state = np.zeros((len(time), mpc.system_dim))
 for step in range(len(time)-Hp):
 
     # MPCに渡す参照信号行列の構成
-    T: FloatArray2D = np.array(reference[step+1:step+Hp+1]).reshape(-1, 1)
+    T: FloatArray2D = np.array(reference[step+1:step+Hp+1], dtype=float).reshape(-1, 1)
+    y: FloatArray2D = np.array(plant_output[step], dtype=float).reshape(-1, 1) # FloatArray2Dに変換
 
-    y = np.array(plant_output[step]).reshape(-1, 1) # FloatArray2Dに変換
-    result = mpc.forward(T=T, y=y)
+    result = mpc(T, y)
     
-    plant_input[step] = result["u"].item()
-    model_predicted_state[step, :] = result["state"].T
+    plant_input[step] = result[0].item()
+    model_predicted_state[step, :] = result[1].T
 
-    plant_output[step+1] = plant.forward(plant_input[step])
- 
-
+    plant_output[step+1] = plant.forward(np.array([[plant_input[step]]], dtype=float))[0] 
 
 
 ### ----- プロット ----- ###

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import NDArray
-from typing import Union, Any, Tuple
+from typing import Any, Tuple
 
 # main関数内のプロットに使用
 import matplotlib.pyplot as plt
@@ -10,7 +10,6 @@ FloatArray1D = NDArray[np.floating]
 FloatArray2D = NDArray[np.floating]
 Inputs = Tuple[FloatArray2D, ...]
 Outputs = Tuple[FloatArray2D, ...]
-Scalar = Union[float, np.floating] 
 
 # FloatArray2Dの型チェックを行う関数
 def _assert_2D_float(variable: np.ndarray, name: str) -> None:
@@ -124,28 +123,6 @@ class BJmodel(Function):
         return self.G(u) + self.G(e)
 
 
-
-
-class SimplePIDController(Function):
-    def __init__(self, kp:float, ki:float, kd:float, Ts:float=1.0)->None:
-        self.kp = float(kp)
-        self.ki = float(ki)
-        self.kd = float(kd)
-        self.Ts = float(Ts)
-
-        self.e_sum: float = 0
-        self.prev_e: float = 0
-
-    def forward(self, u)->float:
-        # 誤差信号に表記を変える
-        e = u
-        # 誤差信号を加算
-        self.e_sum += e
-        y = self.kp*e + self.ki*self.e_sum*self.Ts + self.kd*(e-self.prev_e)/self.Ts
-
-        # 1ステップ前の誤差信号を保存
-        self.prev_e = e
-        return y
 
 
 
