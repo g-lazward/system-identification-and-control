@@ -115,12 +115,19 @@ class QtransferFunc(Function):
 
 class BJmodel(Function):
     
-    def __init__(self, B, F, C, D, delay=0):
+    def __init__(self, B: FloatArray1D, F: FloatArray1D, C: FloatArray1D, D: FloatArray1D, delay:int=0)->None:
         self.G = QtransferFunc(num=B, den=F, delay=delay, predict=True)
         self.H = QtransferFunc(num=C, den=D, delay=0, predict=True)
     
-    def forward(self, u, e):
-        return self.G(u) + self.G(e)
+    def forward(self, inputs: Inputs)-> Outputs:
+        # 入力の取り出し
+        u = inputs[0]
+        e = inputs[1]
+
+        return self.G(u) + self.H(e)
+    
+    def PEM(self, u_history, y_history):
+        # 1-step-ahead predictionの式を用いて誤差の二乗和を返す関数を作る
 
 
 
