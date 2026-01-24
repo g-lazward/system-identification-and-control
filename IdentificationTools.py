@@ -136,7 +136,7 @@ if __name__ == "__main__":
     test_output = np.zeros_like(u)
     
     for step in range(len(u)-1):
-        output[step+1] = system.forward(np.array([[u[step]]], dtype=float))
+        output[step+1] = system(np.array([[u[step]]], dtype=float))[0]
 
         u_ = u[step] if step-1 >= 0 else 0.0
         test_output[step+1] = 0.2*u_ + 0.8*test_output[step]
