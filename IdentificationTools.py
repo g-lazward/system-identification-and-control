@@ -128,6 +128,7 @@ class BJmodel(Function):
     
     def PEM(self, u_history, y_history):
         # 1-step-ahead predictionの式を用いて誤差の二乗和を返す関数を作る
+        pass
 
 
 
