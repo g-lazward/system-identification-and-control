@@ -18,7 +18,7 @@ u = np.ones(N)
 plant:ident.QtransferFunc = ident.QtransferFunc(num=np.array([0.2]), den=np.array([-0.8]), delay=0, predict=False)
 y_tf = np.zeros(N)
 for k in range(N):
-    y_tf[k] = plant(u[k])   # __call__ → forward
+    y_tf[k] = plant(np.array([[u[k]]], dtype=float))[0] 
 
 # --- 状態空間(tf2ss)の応答 ---
 A, B, C, D = signal.tf2ss([0.2], [1.0, -0.8])
