@@ -126,10 +126,46 @@ class BJmodel(Function):
 
         return self.G(u) + self.H(e)
     
-    def PEM(self, u_history, y_history):
-        # 1-step-ahead predictionの式を用いて誤差の二乗和を返す関数を作る
-        pass
 
+def PEM_residuals(param: np.ndarray, model_dim: Tuple[int,int,int,int], u: np.ndarray, y: np.ndarray) -> np.ndarray:
+    B_dim, F_dim, C_dim, D_dim = model_dim
+    
+
+    # パラメータ分割
+    B = param[0:B_dim]
+    F = param[B_dim:B_dim+F_dim]
+    G = QtransferFunc(num=B, den=F, delay=0, predict=True)
+
+    C = param[B_dim+F_dim:B_dim+F_dim+C_dim]
+    D = param[B_dim+F_dim+C_dim:B_dim+F_dim+C_dim+D_dim]
+    H_inv = QtransferFunc(num=D, den=C, delay=0, predict=True)
+    
+    # データ整形
+    u = np.asarray(u).reshape(-1)
+    y = np.asarray(y).reshape(-1)
+    N = y.shape[0]
+    assert u.shape[0] == N
+
+    # y_g と eps は 1サンプル後ろに入る（predict=True の仕様）
+    y_g = np.zeros(N, dtype=float)
+    eps = np.zeros(N, dtype=float)
+
+    # 1) y_g(k) = G u
+    for k in range(N):
+        uk = np.array([[u[k]]], dtype=float)
+        yg_kp1 = G((uk,))[0]
+        if k + 1 < N:
+            y_g[k+1] = float(yg_kp1)
+
+    # 2) eps(k) = H^{-1} ( y(k) - y_g(k) )
+    for k in range(N):
+        wk = np.array([[y[k] - y_g[k]]], dtype=float)
+        eps_kp1 = H_inv((wk,))[0]
+        if k + 1 < N:
+            eps[k+1] = float(eps_kp1)
+
+    # 先頭はズレ＆初期条件がきついので捨てる（最低でも1個）
+    return eps[1:]
 
 
 
