@@ -69,7 +69,7 @@ class QtransferFunc(Function):
 
         # パラメータベクトルの構成（(num_len + den_len, 1)）
         self.parameter: FloatArray2D = np.vstack(
-            [self.num.reshape(-1, 1), -self.den.reshape(-1, 1)]
+            [self.den.reshape(-1, 1), self.num.reshape(-1, 1)]
         )
 
         # 入出力バッファ(初期値0)
@@ -88,8 +88,8 @@ class QtransferFunc(Function):
 
         regressor: FloatArray2D = np.vstack(
             [
-                self.input_buf[self.delay:self.delay+self.num_len].reshape(-1, 1),
                 self.output_buf.reshape(-1, 1),
+                self.input_buf[self.delay:self.delay+self.num_len].reshape(-1, 1),
             ]
         )
         # y(k) = \theta^{\top} \phi(k)
@@ -110,7 +110,7 @@ class QtransferFunc(Function):
     # リグレッサの出力ベクトルの更新
     def updateOutput(self, y: float) -> None:
         self.output_buf[1:] = self.output_buf[:-1]
-        self.output_buf[0] = float(y)
+        self.output_buf[0] = -float(y)
 
 
 class BJmodel(Function):
