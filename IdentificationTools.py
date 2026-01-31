@@ -56,25 +56,93 @@ class QtransferFunc(Function):
 
         # 分子多項式
         assert num.ndim == 1, "numの次元が不正です"
-        self.num: FloatArray1D = num.astype(float, copy=False)
-        self.num_len: int = int(self.num.shape[0])
+        self.__num: FloatArray1D = num.astype(float, copy=False)
+        self.__num_len: int = int(self.__num.shape[0])
 
         # 分母多項式
         assert den.ndim == 1, "denの次元が不正です"
-        self.den: FloatArray1D = den.astype(float, copy=False)
-        self.den_len: int = int(self.den.shape[0])
+        self.__den: FloatArray1D = den.astype(float, copy=False)
+        self.__den_len: int = int(self.__den.shape[0])
 
         # 遅れ時間
-        self.delay: int = int(delay)
+        self.__delay: int = int(delay)
 
         # パラメータベクトルの構成（(num_len + den_len, 1)）
-        self.parameter: FloatArray2D = np.vstack(
-            [self.den.reshape(-1, 1), self.num.reshape(-1, 1)]
+        self.__parameter: FloatArray2D = np.vstack(
+            [self.__den.reshape(-1, 1), self.__num.reshape(-1, 1)]
         )
 
         # 入出力バッファ(初期値0)
-        self.input_buf: FloatArray1D = np.zeros(self.num_len + self.delay, dtype=float)
-        self.output_buf: FloatArray1D = np.zeros(self.den_len, dtype=float)
+        self.input_buf: FloatArray1D = np.zeros(self.__num_len + self.__delay, dtype=float)
+        self.output_buf: FloatArray1D = np.zeros(self.__den_len, dtype=float)
+
+        self.__regressor: FloatArray2D = np.zeros((self.__num_len + self.__den_len, 1), dtype=float)
+
+    # 伝達関数の文字列表現
+    def __str__(self) -> str:
+        def poly_to_str(coeffs, start_power=1):
+            terms = []
+            for i, c in enumerate(coeffs, start=start_power):
+                if abs(c) < 1e-12:
+                    continue
+
+                sign = "+" if c >= 0 else "-"
+                coef = abs(c)
+
+                if coef == 1.0:
+                    term = f"q^-{i}"
+                else:
+                    term = f"{coef:.4g} q^-{i}"
+
+                terms.append((sign, term))
+
+            if not terms:
+                return "0"
+
+            # 先頭だけ符号を消す
+            sgn, term = terms[0]
+            expr = term if sgn == "+" else f"- {term}"
+
+            for sgn, term in terms[1:]:
+                expr += f" {sgn} {term}"
+
+            return expr
+
+        num_str = poly_to_str(self.__num)
+        den_str = poly_to_str(self.__den)
+
+        d = self.__delay
+
+        lines = []
+        lines.append("G(q) = y(k) / u(k)")
+        lines.append(f"     = q^-{d} * ( {num_str} )")
+        lines.append(f"       ---------------------")
+        lines.append(f"         ( 1 {(' + ' + den_str) if den_str != '0' else ''} )")
+
+        return "\n".join(lines)
+    
+
+    @property
+    def den(self) -> FloatArray1D:
+        return self.__den
+    
+    @property
+    def num(self) -> FloatArray1D:
+        return self.__num
+    
+    @property
+    def parameter(self) -> FloatArray2D:
+        return self.__parameter
+    
+    @property
+    def regressor(self) -> FloatArray2D:
+        return self.__regressor
+
+    @parameter.setter
+    def parameter(self, param: FloatArray2D) -> None:
+        if (self.__parameter.shape != param.shape):
+            raise ValueError("parameterの形状が不正です")
+        self.__parameter = param
 
     def forward(self, u: Inputs) -> Outputs:
         """
@@ -86,14 +154,14 @@ class QtransferFunc(Function):
         if self.is_predict:
             self.updateInput(u)
 
-        regressor: FloatArray2D = np.vstack(
+        self.__regressor = np.vstack(
             [
                 self.output_buf.reshape(-1, 1),
-                self.input_buf[self.delay:self.delay+self.num_len].reshape(-1, 1),
+                self.input_buf[self.__delay:self.__delay+self.__num_len].reshape(-1, 1),
             ]
         )
         # y(k) = \theta^{\top} \phi(k)
-        y:float = (self.parameter.T @ regressor).item()
+        y:float = (self.__parameter.T @ self.__regressor).item()
 
         self.updateOutput(y)
 
@@ -166,7 +234,6 @@ def PEM_residuals(param: np.ndarray, model_dim: Tuple[int,int,int,int], u: np.nd
 
     # 先頭はズレ＆初期条件がきついので捨てる（最低でも1個）
     return eps[1:]
-
 
 
 

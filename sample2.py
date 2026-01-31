@@ -15,6 +15,8 @@ if __name__ == "__main__":
     # 制御対象
     plant:ident.QtransferFunc = ident.QtransferFunc(num=np.array([0.2]), den=np.array([-0.8]), delay=0, predict=True)
 
+    print(plant)
+
     # scipy用制御対象
     b = [0.2]
     a = [1.0, -0.8]
