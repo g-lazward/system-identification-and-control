@@ -55,16 +55,17 @@ class QtransferFunc(Function):
         self.is_predict = predict
 
         # 分子多項式
-        assert num.ndim == 1, "numの次元が不正です"
+        _assert_1D_float(num, "num")
         self.__num: FloatArray1D = num.astype(float, copy=False)
         self.__num_len: int = int(self.__num.shape[0])
 
         # 分母多項式
-        assert den.ndim == 1, "denの次元が不正です"
+        _assert_1D_float(den, "den")
         self.__den: FloatArray1D = den.astype(float, copy=False)
         self.__den_len: int = int(self.__den.shape[0])
 
         # 遅れ時間
+        assert delay >= 0, "delay must be non-negative"
         self.__delay: int = int(delay)
 
         # パラメータベクトルの構成（(num_len + den_len, 1)）
@@ -181,7 +182,7 @@ class QtransferFunc(Function):
         self.output_buf[0] = -float(y)
 
 
-class BJmodel(Function):
+class BJ(Function):
     
     def __init__(self, B: FloatArray1D, F: FloatArray1D, C: FloatArray1D, D: FloatArray1D, delay:int=0)->None:
         self.G = QtransferFunc(num=B, den=F, delay=delay, predict=True)
