@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from scipy import signal
 
 from sample2 import square_signal
-from numpy.typing import NDArray
 from typing import Union
 from identctrl.types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float, Inputs, Outputs
 Scalar = Union[float, np.floating]

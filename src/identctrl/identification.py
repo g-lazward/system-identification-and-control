@@ -8,9 +8,41 @@ import matplotlib.pyplot as plt
 
 
 class Function(ABC):
-    def __call__(self, *inputs: FloatArray2D, **params):
-        # 信号類はinputs(タプル)，パラメータ等はparamsに渡して処理
+    """
+    信号処理・システムモデル用の抽象基底クラス。
 
+    このクラスは「関数オブジェクト」として振る舞うことを想定しており，
+    インスタンスをそのまま callable にして使用できる。
+
+    入力信号はすべて 2 次元の浮動小数点配列として受け取り，
+    共通の型チェックを行った上で，実際の計算処理は `forward` メソッドに委譲する。
+
+    具体的な処理内容はサブクラス側で `forward` を実装することで定義する。
+    """
+
+    def __call__(self, *inputs: FloatArray2D, **params):
+        """
+        入力信号とパラメータを受け取り，forward 処理を実行する。
+
+        このメソッドにより，Function クラスのインスタンスは
+        通常の関数のように呼び出すことができる。
+
+        入力は可変長引数として受け取り，すべての入力信号に対して
+        2 次元配列かどうかの型チェックを行う。
+        パラメータ類はキーワード引数として受け取る。
+
+        Args:
+            *inputs (FloatArray2D): 入力信号を表す 2 次元の浮動小数点配列．
+            **params: モデル係数やオプションなどの追加パラメータ．
+
+        Returns:
+            Outputs: forward メソッドによって計算された出力．
+
+        Raises:
+            ValueError: 入力信号が 1 つも与えられなかった場合．
+            AssertionError: 入力信号が 2 次元の浮動小数点配列でない場合．
+        """
+        
         # 型チェック
         if len(inputs) == 0:
             raise ValueError("inputs must have at least one element")
@@ -21,12 +53,53 @@ class Function(ABC):
 
     @abstractmethod
     def forward(self, *input: FloatArray2D, **params) -> Outputs:
+        """
+        実際の信号処理・モデル計算を定義する抽象メソッド。
+
+        このメソッドはサブクラスで必ず実装する必要があり，
+        入力信号から出力をどのように計算するかを記述する。
+
+        通常は 1 ステップ予測，シミュレーション，
+        あるいはシステムの出力計算などをここで行う。
+
+        Args:
+            *input (FloatArray2D): 入力信号を表す 2 次元の浮動小数点配列．
+            **params: 計算に必要なパラメータや設定値．
+
+        Returns:
+            Outputs: 計算結果としての出力信号．
+
+        Raises:
+            NotImplementedError: サブクラスで実装されていない場合．
+        """
         raise NotImplementedError
 
 
 class QtransferFunc(Function):
-    # num, denは1次元配列として渡すこと
+    """
+    離散時間SISOの伝達関数モデル（q^-1 表現）を扱うクラス。
+
+    分子 `num` と分母 `den`（どちらも 1 次元配列）と遅れ `delay` を持ち，
+    内部バッファからリグレッサ φ を作って y = θ^T φ を計算する。
+
+    `predict=True` のときは 1-step ahead 予測の並び（入力の更新タイミングが先）で動作する。
+    """
+    
     def __init__(self, num: FloatArray1D, den: FloatArray1D, delay: int = 0, predict:bool=True) -> None:
+        """
+        モデル係数と内部状態（バッファ等）を初期化する。
+
+        Args:
+            num (FloatArray1D): 分子多項式係数（q^-1 の係数列）．
+            den (FloatArray1D): 分母多項式係数（q^-1 の係数列）．
+            delay (int): 入力の遅れステップ数（0以上）．
+            predict (bool): 予測モードの切替．Trueで 1-step ahead 系の更新順になる．
+
+        Raises:
+            AssertionError: delay が負の場合．
+            AssertionError: num/den が 1 次元の浮動小数点配列でない場合．
+        """
+
         # Trueの場合, y(k+1) = \theta^{\top}\phi(k)
         # Falseの場合, y(k) = \theta^{\top}\phi(k) *phiの中身は若干異なる．
         self.is_predict = predict
@@ -56,8 +129,14 @@ class QtransferFunc(Function):
 
         self.__regressor: FloatArray2D = np.zeros((self.__num_len + self.__den_len, 1), dtype=float)
 
-    # 伝達関数の文字列表現
     def __str__(self) -> str:
+        """
+        伝達関数 G(q) をテキストとして整形して返す。
+
+        Returns:
+            str: q^-d と多項式を用いた G(q)=y/u の表示文字列．
+        """
+
         def poly_to_str(coeffs, start_power=1):
             terms = []
             for i, c in enumerate(coeffs, start=start_power):
@@ -109,15 +188,32 @@ class QtransferFunc(Function):
         return self.__num
     
     @property
-    def parameter(self) -> FloatArray2D:
-        return self.__parameter
-    
-    @property
     def regressor(self) -> FloatArray2D:
         return self.__regressor
+    
+    @property
+    def parameter(self) -> FloatArray2D:
+        """
+        パラメータベクトル θ を返す（[den; num] の縦結合）。
 
+        Returns:
+            FloatArray2D: 形状 (den_len + num_len, 1) のパラメータベクトル．
+        """
+
+        return self.__parameter
+    
     @parameter.setter
     def parameter(self, param: FloatArray2D) -> None:
+        """
+        パラメータベクトル θ を更新し，den/num に反映する。
+
+        Args:
+            param (FloatArray2D): 形状が一致する新しいパラメータベクトル．
+
+        Raises:
+            ValueError: 形状が一致しない場合．
+        """
+
         if (self.__parameter.shape != param.shape):
             raise ValueError(f"parameterの形状が不正です. parameter:{self.__parameter.shape}, param:{param.shape}")
         
@@ -129,8 +225,17 @@ class QtransferFunc(Function):
 
     def forward(self, u: Inputs) -> Outputs:
         """
-        regressor: (num_len + den_len, 1)
+        入力からリグレッサ φ を構成し，y = θ^T φ を計算して返す。
+
+        predict の設定に応じて入力バッファの更新タイミングが変わる。
+
+        Args:
+            u (Inputs): 先頭要素に入力信号（2次元配列）が入ったタプル．
+
+        Returns:
+            Outputs: 出力 y を 1 要素タプルで返す．
         """
+
         # Inputs（タプルから最初の要素を取り出す）
         u = u[0]        
 
@@ -153,18 +258,32 @@ class QtransferFunc(Function):
 
         return (y, )
 
-    # リグレッサの入力ベクトルの更新
+    
     def updateInput(self, u: FloatArray2D) -> None:
+        """
+        入力バッファをシフトして最新入力を格納する。
+
+        Args:
+            u (FloatArray2D): 最新入力（スカラー相当の2次元配列）．
+        """
         self.input_buf[1:] = self.input_buf[:-1]
         self.input_buf[0] = float(u.item())
     
-    # リグレッサの出力ベクトルの更新
     def updateOutput(self, y: float) -> None:
+        """
+        出力バッファをシフトして最新出力を格納する。
+        （リグレッサ用に符号反転して保存する）
+
+        Args:
+            y (float): 最新出力．
+        """
         self.output_buf[1:] = self.output_buf[:-1]
         self.output_buf[0] = -float(y)
 
-    # リグレッサーの状態リセット
     def reset(self) -> None:
+        """
+        入出力バッファをゼロに戻し，内部状態をリセットする。
+        """
         self.input_buf[:] = 0.0
         self.output_buf[:] = 0.0
 
@@ -197,47 +316,6 @@ class BJ(Function):
         e = inputs[1]
 
         return self.G(u) + self.H(e)
-    
-
-def PEM_residuals(param: np.ndarray, model_dim: Tuple[int,int,int,int], u: np.ndarray, y: np.ndarray) -> np.ndarray:
-    B_dim, F_dim, C_dim, D_dim = model_dim
-    
-
-    # パラメータ分割
-    B = param[0:B_dim]
-    F = param[B_dim:B_dim+F_dim]
-    G = QtransferFunc(num=B, den=F, delay=0, predict=True)
-
-    C = param[B_dim+F_dim:B_dim+F_dim+C_dim]
-    D = param[B_dim+F_dim+C_dim:B_dim+F_dim+C_dim+D_dim]
-    H_inv = QtransferFunc(num=D, den=C, delay=0, predict=True)
-    
-    # データ整形
-    u = np.asarray(u).reshape(-1)
-    y = np.asarray(y).reshape(-1)
-    N = y.shape[0]
-    assert u.shape[0] == N
-
-    # y_g と eps は 1サンプル後ろに入る（predict=True の仕様）
-    y_g = np.zeros(N, dtype=float)
-    eps = np.zeros(N, dtype=float)
-
-    # 1) y_g(k) = G u
-    for k in range(N):
-        uk = np.array([[u[k]]], dtype=float)
-        yg_kp1 = G((uk,))[0]
-        if k + 1 < N:
-            y_g[k+1] = float(yg_kp1)
-
-    # 2) eps(k) = H^{-1} ( y(k) - y_g(k) )
-    for k in range(N):
-        wk = np.array([[y[k] - y_g[k]]], dtype=float)
-        eps_kp1 = H_inv((wk,))[0]
-        if k + 1 < N:
-            eps[k+1] = float(eps_kp1)
-
-    # 先頭はズレ＆初期条件がきついので捨てる（最低でも1個）
-    return eps[1:]
 
 
 
