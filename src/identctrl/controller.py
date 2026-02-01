@@ -2,14 +2,11 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import Union
 from dataclasses import dataclass
-import IdentificationTools as ident
+from identctrl import identification as ident
+from identctrl.types import FloatArray1D, FloatArray2D
 
 from cvxopt import matrix
 from cvxopt.solvers import qp
-
-
-FloatArray1D = NDArray[np.floating]
-FloatArray2D = NDArray[np.floating]
 
 
 @dataclass

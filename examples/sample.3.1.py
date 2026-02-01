@@ -1,13 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
-import IdentificationTools as ident
-
+import identctrl.identification as ident
 
 """
 離散時間伝達関数と対応する状態空間表現のステップ応答が一致するか確認
-簡単なプログラムだからchatGPTにプログラムは任せた
-→ひとまず大丈夫そう．
 """
 
 # --- ステップ入力 ---

@@ -1,5 +1,5 @@
-import IdentificationTools as ident
-import ControllerTools as cont
+import identctrl.identification as ident
+import identctrl.controller as cont
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -8,8 +8,7 @@ from scipy import signal
 from sample2 import square_signal
 from numpy.typing import NDArray
 from typing import Union
-FloatArray1D = NDArray[np.floating]
-FloatArray2D = NDArray[np.floating]
+from identctrl.types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float, Inputs, Outputs
 Scalar = Union[float, np.floating]
 
 # 制御対象
@@ -83,6 +82,6 @@ ax_bottom.step(time, plant_input, where="post")
 ax_bottom.set_xlabel("Time [step]")
 ax_bottom.set_ylabel("input [-]")
 ax_bottom.grid()
-plt.savefig("mpc.svg", format="svg", transparent=True)
+plt.savefig("./examples/figure/example3_mpc.svg", format="svg", transparent=True)
 plt.show()
 ### -------------------- ###

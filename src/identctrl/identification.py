@@ -1,33 +1,10 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from numpy.typing import NDArray
-from typing import Any, Tuple
+from typing import Tuple
+from identctrl.types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float, Inputs, Outputs
 
 # main関数内のプロットに使用
 import matplotlib.pyplot as plt
-
-FloatArray1D = NDArray[np.floating]
-FloatArray2D = NDArray[np.floating]
-Inputs = Tuple[FloatArray2D, ...]
-Outputs = Tuple[FloatArray2D, ...]
-
-# FloatArray2Dの型チェックを行う関数
-def _assert_2D_float(variable: np.ndarray, name: str) -> None:
-    if not isinstance(variable, np.ndarray):
-        raise TypeError(f"{name} must be np.ndarray")
-    if variable.ndim != 2:
-        raise ValueError(f"{name} must be 2D, ndim={variable.ndim}")
-    if not np.issubdtype(variable.dtype, np.floating):
-        raise TypeError(f"{name} must be floating dtype, dtype={variable.dtype}")
-
-# FloatArray1Dの型チェックを行う関数
-def _assert_1D_float(variable: np.ndarray, name: str) -> None:
-    if not isinstance(variable, np.ndarray):
-        raise TypeError(f"{name} must be np.ndarray")
-    if variable.ndim != 1:
-        raise ValueError(f"{name} must be 1D, ndim={variable.ndim}")
-    if not np.issubdtype(variable.dtype, np.floating):
-        raise TypeError(f"{name} must be floating dtype, dtype={variable.dtype}")
 
 
 class Function(ABC):

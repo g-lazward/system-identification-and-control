@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "identctrl"
+version = "0.1.0"
+description = "System identification and control tools"
+requires-python = ">=3.8.20"
+dependencies = [
+    "numpy",
+    "scipy",
+    "control",
+    "cvxopt",
+]
+
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

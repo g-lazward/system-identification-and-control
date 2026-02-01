@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import IdentificationTools as ident
+from identctrl import identification as ident
 from scipy import signal
 from control import place
 from sample2 import square_signal
@@ -86,10 +86,10 @@ ax_bottom.plot(time, input)
 ax_bottom.grid()
 ax_bottom.set_ylabel("Input [-]")
 ax_bottom.set_xlabel("Time [step]")
-plt.savefig("identification/identification_experiment.svg", format="svg")
+plt.savefig("./examples/figure/example4_ident_experiment.svg", format="svg")
 # plt.show()
 
-folder_name = "identification/closed_loop_identification_simulation"
+folder_name = "./examples/data"
 output_name = "IO-data.csv"
 
 with open(os.path.join(folder_name, output_name), "w") as file:

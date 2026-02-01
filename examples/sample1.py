@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
-import IdentificationTools as ident
+from identctrl import identification as ident
 
 """
 自作したシフトオペレータを用いたSISO離散時間伝達関数と
@@ -18,8 +18,8 @@ system = ident.QtransferFunc(num=np.array([0.2]), den=np.array([-0.8]), predict=
 
 sample_num = 100
 u = np.ones(sample_num)
-output = np.zeros_like(u)
-handwrite_output = np.zeros_like(u)
+output = np.full_like(u, np.nan, dtype=float)
+handwrite_output = np.full_like(u, np.nan, dtype=float)
 
 for step in range(len(u)-1):
     
@@ -39,5 +39,5 @@ ax.plot(t, output, label="my_program")
 ax.plot(t, handwrite_output, label="handwriting")
 plt.grid()
 plt.legend()
-plt.savefig("step.svg", format="svg", transparent=True)
+plt.savefig("./examples/figure/example1_step.svg", format="svg", transparent=True)
 plt.show()

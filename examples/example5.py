@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
-import IdentificationTools as ident
+import identctrl.identification as ident
 from pprint import pprint
 import sys
 
 
 # システム同定データの読み込み
-file = np.loadtxt("closed_loop_identification_simulation/IO-data.csv", delimiter=",", skiprows=1)
+file = np.loadtxt("./examples/data/IO-data.csv", delimiter=",", skiprows=1)
 
 # 各信号の抽出
 time = file[:, 0]

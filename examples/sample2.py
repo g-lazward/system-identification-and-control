@@ -1,5 +1,5 @@
-import IdentificationTools as ident
-import ControllerTools as ctrl
+import identctrl.identification as ident
+import identctrl.controller as ctrl
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
@@ -85,6 +85,6 @@ if __name__ == "__main__":
     ax_bottom.plot(time, input, marker='.')
     plt.grid()
 
-    # plt.savefig("step.svg", format="svg", transparent=True)
-    plt.show()
+    plt.savefig("./examples/figure/example2_step.svg", format="svg", transparent=True)
+    # plt.show()
     ## ----- ----------- -----
