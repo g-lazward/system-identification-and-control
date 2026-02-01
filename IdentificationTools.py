@@ -142,7 +142,12 @@ class QtransferFunc(Function):
     @parameter.setter
     def parameter(self, param: FloatArray2D) -> None:
         if (self.__parameter.shape != param.shape):
-            raise ValueError("parameterの形状が不正です")
+            raise ValueError(f"parameterの形状が不正です. parameter:{self.__parameter.shape}, param:{param.shape}")
+        
+        # パラメータベクトルの分割と代入
+        self.__den[:] = param[0:self.__den_len].reshape(-1)
+        self.__num[:] = param[self.__den_len:self.__den_len + self.__num_len].reshape(-1)
+
         self.__parameter = param
 
     def forward(self, u: Inputs) -> Outputs:
@@ -181,12 +186,33 @@ class QtransferFunc(Function):
         self.output_buf[1:] = self.output_buf[:-1]
         self.output_buf[0] = -float(y)
 
+    # リグレッサーの状態リセット
+    def reset(self) -> None:
+        self.input_buf[:] = 0.0
+        self.output_buf[:] = 0.0
+
 
 class BJ(Function):
     
     def __init__(self, B: FloatArray1D, F: FloatArray1D, C: FloatArray1D, D: FloatArray1D, delay:int=0)->None:
         self.G = QtransferFunc(num=B, den=F, delay=delay, predict=True)
         self.H = QtransferFunc(num=C, den=D, delay=0, predict=True)
+
+        self.__parameter: FloatArray2D = np.vstack([self.G.parameter, self.H.parameter])
+
+    @property
+    def parameter(self) -> FloatArray2D:
+        return np.vstack([self.G.parameter, self.H.parameter])
+    
+    @parameter.setter
+    def parameter(self, param: FloatArray2D) -> None:
+        B_dim = self.G.num.shape[0]
+        F_dim = self.G.den.shape[0]
+        C_dim = self.H.num.shape[0]
+        D_dim = self.H.den.shape[0]
+
+        self.G.parameter = param[0:B_dim+F_dim]
+        self.H.parameter = param[B_dim+F_dim:B_dim+F_dim+C_dim+D_dim]
     
     def forward(self, inputs: Inputs)-> Outputs:
         # 入力の取り出し
