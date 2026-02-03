@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
 import identctrl.identification as ident
 from pprint import pprint
-import sys
 
 
 # システム同定データの読み込み
@@ -48,6 +47,7 @@ def residuals(param, input, output):
     
     return predicted_error[waste_num:]
 
+# 1 step-ahead-predictionの式で最適化によってH^{-1}の分子多項式を0️にされるのを防ぐために，パラメータの下限・上限を設定
 lb = np.array([-np.inf, -np.inf, -np.inf, 0.1])
 ub = np.array([ np.inf,  np.inf,  np.inf, 5.0])
 
@@ -71,17 +71,21 @@ for step in range(len(output)):
     predicted_output[step] = plant_model(np.array([[input[step]]], dtype=float))[0]
     
 
-
-
 fig = plt.figure(figsize=(8, 6))
 ax_top = fig.add_subplot(2, 1, 1)
 ax_top.plot(time, reference, label="reference")
 ax_top.plot(time, output, label="output")
 ax_top.plot(time, predicted_output, label="predicted output")
+ax_top.set_ylabel("output [-]")
+ax_top.grid()
 ax_top.legend()
 ax_bottom = fig.add_subplot(2, 1, 2)
 ax_bottom.plot(time, input, label="input")
+ax_bottom.set_xlabel("step [-]")
+ax_bottom.set_ylabel("input [-]")
+ax_bottom.grid()
 ax_bottom.legend()
+fig.savefig("./examples/figure/example5_ident.svg", format="svg", transparent=True)
 
 fig = plt.figure(figsize=(8, 6))
 ax = fig.add_subplot(1, 1, 1)
@@ -90,9 +94,11 @@ ax.plot(param_history[:, 0], label="plant num")
 ax.plot(param_history[:, 1], label="plant den")
 ax.plot(param_history[:, 2], label="inv noise num")
 ax.plot(param_history[:, 3], label="inv noise den")
-ax.set_xlabel("iteration")
-ax.set_ylabel("parameter value")
+ax.set_xlabel("iteration [-]")
+ax.set_ylabel("parameter [-]")
+ax.grid()
 ax.legend()
+fig.savefig("./examples/figure/example5_parameters.svg", format="svg", transparent=True)
 
 
 plt.show()
