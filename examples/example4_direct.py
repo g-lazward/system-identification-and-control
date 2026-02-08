@@ -15,7 +15,7 @@ input = file[:, 2]
 output = file[:, 3]
 
 # モデルの初期化
-plant_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([0., 0., 0.]), den=np.array([0., 0., 0.,]), delay=0, predict=True)
+plant_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([0., 0., 0., 0.]), den=np.array([0., 0., 0., 0.]), delay=0, predict=True)
 inv_noise_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([1.]), den=np.array([0.3]), delay=0, predict=True)
 
 # パラメータ初期値の設定
@@ -49,8 +49,8 @@ def residuals(param, input, output):
     return predicted_error[waste_num:]
 
 # 1 step-ahead-predictionの式で最適化によってH^{-1}の分子多項式を0️にされるのを防ぐために，パラメータの下限・上限を設定
-lb = np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0.1])
-ub = np.array([ np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf, 5.0])
+lb = np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0.1])
+ub = np.array([ np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf, 5.0])
 
 result = least_squares(
     residuals,
@@ -82,6 +82,7 @@ ax_top.plot(time, predicted_output, label="predicted output")
 ax_top.set_ylabel("output [-]")
 ax_top.grid()
 ax_top.legend()
+ax_top.set_ylim([-1.5, 1.5])
 ax_bottom = fig.add_subplot(2, 1, 2)
 ax_bottom.plot(time, input, label="input")
 ax_bottom.set_xlabel("step [-]")

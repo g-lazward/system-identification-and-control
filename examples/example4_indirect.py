@@ -15,7 +15,7 @@ input = file[:, 2]
 output = file[:, 3]
 
 # モデルの初期化
-ru_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([0., 0.,]), den=np.array([0., 0., 0.,]), delay=0, predict=True)
+ru_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([0., 0., 0., 0.]), den=np.array([0., 0., 0., 0.]), delay=0, predict=True)
 inv_ru_noise_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([1.]), den=np.array([0.3]), delay=0, predict=True)
 
 # パラメータ初期値の設定
@@ -49,8 +49,8 @@ def residuals(param, input, output):
     return predicted_error[waste_num:]
 
 # 1 step-ahead-predictionの式で最適化によってH^{-1}の分子多項式を0️にされるのを防ぐために，パラメータの下限・上限を設定
-lb = np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0.1])
-ub = np.array([ np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf, 5.0])
+lb = np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0.1])
+ub = np.array([ np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf, 5.0])
 
 result = least_squares(
     residuals,
@@ -59,8 +59,8 @@ result = least_squares(
     args=(reference, input),
     method="trf",
     verbose=1,
-    max_nfev=50,
-    ftol=1e-4, xtol=1e-4, gtol=1e-4
+    max_nfev=200,
+    ftol=1e-6, xtol=1e-6, gtol=1e-6
 )
 
 
@@ -110,7 +110,7 @@ for step in range(len(output)):
 
 # ------------------------- step 2 ------------------------------ #
 # モデルの初期化
-# uy_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([1., 0.8, 0.12]), den=np.array([1.8, 1, 0.15,]), delay=0, predict=True)
+# uy_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([1., 0.8, 0.12]), den=np.array([1.9, 0.96, 0.144,]), delay=0, predict=True) # 真値
 uy_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([0., 0., 0.]), den=np.array([0., 0., 0.]), delay=0, predict=True)
 inv_uy_noise_model: ident.QtransferFunc = ident.QtransferFunc(num=np.array([1.]), den=np.array([0.3]), delay=0, predict=True)
 
@@ -149,6 +149,9 @@ def residuals(param, input, output):
 # 1 step-ahead-predictionの式で最適化によってH^{-1}の分子多項式を0️にされるのを防ぐために，パラメータの下限・上限を設定
 lb = np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0.1])
 ub = np.array([ np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf, 5.0])
+# 真値用
+# lb = np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf,  0.1])
+# ub = np.array([ np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  5.0])
 
 result = least_squares(
     residuals,
@@ -197,7 +200,6 @@ ax.plot(param_history)
 ax.set_xlabel("iteration [-]")
 ax.set_ylabel("parameter [-]")
 ax.grid()
-ax.legend()
 fig.savefig("./examples/figure/example5_parameters2.svg", format="svg", transparent=True)
 
 plt.show()

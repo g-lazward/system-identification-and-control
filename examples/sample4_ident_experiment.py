@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from identctrl import identification as ident
 from scipy import signal
-from control import place
+from control import place, ss, tf
 from sample2 import square_signal
 
 import os
@@ -38,7 +38,11 @@ print("---------------")
 poles = [0.2, 0.25, 0.3, 0.35]
 K = place(Ae, Be, poles)
 # 状態フィードバックゲイン
-print(K)
+print(f"feedback gain: {K}")
+
+closed_ss = ss(Ae - Be @ K, Ee, Ce, 0, True)
+closed_tf = tf(closed_ss)
+print(closed_tf)
 
 
 # 時間配列
@@ -61,7 +65,7 @@ system_state = np.zeros((len(time), Ae.shape[0]))
 for step in range(len(time)-1):
 
     # ホワイトノイズ
-    v = np.random.normal(0, scale=0.2)
+    v = np.random.normal(0, scale=0.3)
     output[step] = (Ce @ system_state[step]).item() + v
 
     # 積分状態だけ先に更新
