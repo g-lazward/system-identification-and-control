@@ -59,7 +59,10 @@ system_state = np.zeros((len(time), Ae.shape[0]))
 
 
 for step in range(len(time)-1):
-    output[step] = (Ce @ system_state[step]).item()
+
+    # ホワイトノイズ
+    v = np.random.normal(0, scale=0.2)
+    output[step] = (Ce @ system_state[step]).item() + v
 
     # 積分状態だけ先に更新
     state_temp = system_state[step].copy()

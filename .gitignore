@@ -30,3 +30,6 @@ Thumbs.db
 
 # データフォルダ
 /examples/data/**/
+
+# figure
+/examples/figure/**/
