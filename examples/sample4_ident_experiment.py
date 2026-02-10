@@ -34,6 +34,8 @@ print("Ee:", Ee)
 print("Ce:", Ce)
 print("---------------")
 
+print(f"拡大系の固有値 : {np.linalg.eigvals(Ae)}")
+
 # 極配置
 poles = [0.2, 0.25, 0.3, 0.35]
 K = place(Ae, Be, poles)
@@ -83,7 +85,7 @@ for step in range(len(time)-1):
 
 fig = plt.figure(figsize=(8, 6))
 ax_top = fig.add_subplot(2, 1, 1)
-ax_top.plot(time, reference, label="reference", marker='.')
+ax_top.plot(time, reference, label="reference")
 ax_top.plot(time, output, label="system", marker=".")
 ax_top.legend()
 ax_top.grid()
@@ -93,7 +95,7 @@ ax_bottom.plot(time, input)
 ax_bottom.grid()
 ax_bottom.set_ylabel("Input [-]")
 ax_bottom.set_xlabel("Time [step]")
-plt.savefig("./examples/figure/example4_ident_experiment.svg", format="svg")
+plt.savefig("./examples/figure/example4_ident_experiment.svg", transparent=True, format="svg")
 # plt.show()
 
 folder_name = "./examples/data"

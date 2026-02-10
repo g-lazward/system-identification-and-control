@@ -68,6 +68,7 @@ ru_model.parameter = result.x[0:ru_model.parameter.shape[0]].reshape(-1, 1)
 # pprint(f"推定r->uパラメータ: {ru_model.parameter})
 
 print(f"推定r->u伝達関数: {ru_model}")
+print(f"推定ノイズモデル: {inv_ru_noise_model}")
 
 # 予測入力のプロット
 predicted_input = np.zeros(len(output), dtype=float)
@@ -169,6 +170,7 @@ uy_model.parameter = result.x[0:uy_model.parameter.shape[0]].reshape(-1, 1)
 # pprint(f"推定r->uパラメータ: {ru_model.parameter})
 
 print(f"推定u->y伝達関数: {uy_model}")
+print(f"推定ノイズモデル: {inv_uy_noise_model}")
 
 # 予測出力のプロット(もともとの不安定系の出力だから発散する）
 predicted_output = np.zeros(len(output), dtype=float)

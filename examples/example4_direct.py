@@ -68,6 +68,7 @@ plant_model.parameter = result.x[0:plant_model.parameter.shape[0]].reshape(-1, 1
 # pprint(plant_model.parameter)
 
 print(f"推定閉ループ伝達関数: {plant_model}")
+print(f"推定ノイズモデル: {inv_noise_model}")
 predicted_output = np.zeros(len(output), dtype=float)
 
 for step in range(len(output)):
@@ -94,14 +95,10 @@ fig.savefig("./examples/figure/example5_ident.svg", format="svg", transparent=Tr
 fig = plt.figure(figsize=(8, 6))
 ax = fig.add_subplot(1, 1, 1)
 param_history = np.array(param_history)
-ax.plot(param_history[:, 0], label="plant num")
-ax.plot(param_history[:, 1], label="plant den")
-ax.plot(param_history[:, 2], label="inv noise num")
-ax.plot(param_history[:, 3], label="inv noise den")
+ax.plot(param_history)
 ax.set_xlabel("iteration [-]")
 ax.set_ylabel("parameter [-]")
 ax.grid()
-ax.legend()
 fig.savefig("./examples/figure/example5_parameters.svg", format="svg", transparent=True)
 
 
