@@ -317,8 +317,77 @@ class BJ(Function):
 
         return self.G(u) + self.H(e)
 
+class RLS(Function):
+    """Recursive Least Squares (RLS) estimator.
 
+    This class implements the standard RLS parameter update rule:
 
+        theta(t) = theta(t-1)
+                   + P(t-1) phi(t)
+                     (y(t) - phi(t)^T theta(t-1))
+                     / (1 + phi(t)^T P(t-1) phi(t))
+
+        P(t-1) = P(t-2)
+               - P(t-2) phi(t-1) phi(t-1)^T P(t-2)
+                 / (1 + phi(t-1)^T P(t-2) phi(t-1))
+
+    Attributes:
+        theta (FloatArray2D): Current parameter estimate vector.
+        P (FloatArray2D): Current covariance matrix.
+    """
+
+    def __init__(self, theta_init: FloatArray2D, P_init: FloatArray2D) -> None:
+        """Initializes the RLS estimator.
+
+        Args:
+            theta_init (FloatArray2D): Initial parameter vector.
+                Shape should be (n, 1).
+            P_init (FloatArray2D): Initial covariance matrix.
+                Shape should be (n, n).
+
+        Raises:
+            AssertionError: If inputs are not 2D float arrays.
+        """
+        _assert_2D_float(theta_init, "theta_init")
+        self.theta: FloatArray2D = theta_init
+        _assert_2D_float(P_init, "P_init")
+        self.P: FloatArray2D = P_init
+    
+    def forward(self, inputs: Inputs) -> Outputs:
+        """Performs one RLS update step.
+
+        Args:
+            inputs (Inputs): Tuple containing:
+                - phi (FloatArray2D): Regressor vector of shape (n, 1).
+                - y (float): Measured output scalar.
+
+        Returns:
+            Outputs: Tuple containing updated parameter vector (theta,).
+        """        
+        phi = inputs[0]
+        y = inputs[1]
+        
+        self.__calcTheta(phi, y)
+        self.__calcP(phi)
+
+        return (self.theta, )
+
+    def __calcTheta(self, phi: FloatArray2D, y: float) -> None:
+        """Updates the parameter vector theta.
+
+        Args:
+            phi (FloatArray2D): Regressor vector of shape (n, 1).
+            y (float): Measured output scalar.
+        """        
+        self.theta = self.theta + self.P @ phi * (y - phi.T @ self.theta) / (1 + phi.T @ self.P @ phi)
+    
+    def __calcP(self, phi: FloatArray2D) -> None:
+        """Updates the covariance matrix P.
+
+        Args:
+            phi (FloatArray2D): Regressor vector of shape (n, 1).
+        """        
+        self.P = self.P - self.P @ phi @ phi.T @ self.P / (1 + phi.T @ self.P @ phi)
         
 if __name__ == "__main__":
     system = QtransferFunc(num=np.array([0.2]), den=np.array([-0.8]))
