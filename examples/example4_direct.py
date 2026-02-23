@@ -99,7 +99,7 @@ ax.plot(param_history)
 ax.set_xlabel("iteration [-]")
 ax.set_ylabel("parameter [-]")
 ax.grid()
-fig.savefig("./examples/figure/example5_parameters.svg", format="svg", transparent=True)
+fig.savefig("./examples/figure/example4_parameters.svg", format="svg", transparent=True)
 
 
 plt.show()

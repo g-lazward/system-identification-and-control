@@ -336,7 +336,7 @@ class RLS(Function):
         P (FloatArray2D): Current covariance matrix.
     """
 
-    def __init__(self, theta_init: FloatArray2D, P_init: FloatArray2D) -> None:
+    def __init__(self, theta_init: FloatArray2D, P_init: FloatArray2D, discount: float = 1.0) -> None:
         """Initializes the RLS estimator.
 
         Args:
@@ -352,6 +352,9 @@ class RLS(Function):
         self.theta: FloatArray2D = theta_init
         _assert_2D_float(P_init, "P_init")
         self.P: FloatArray2D = P_init
+
+        assert discount > 0 and discount <= 1, f"discount factor must be in (0, 1]; discount={discount}"
+        self.discount: float = discount
     
     def forward(self, inputs: Inputs) -> Outputs:
         """Performs one RLS update step.
@@ -379,7 +382,7 @@ class RLS(Function):
             phi (FloatArray2D): Regressor vector of shape (n, 1).
             y (float): Measured output scalar.
         """        
-        self.theta = self.theta + self.P @ phi * (y - phi.T @ self.theta) / (1 + phi.T @ self.P @ phi)
+        self.theta = self.theta + self.P @ phi * (y - phi.T @ self.theta) / (self.discount + phi.T @ self.P @ phi)
     
     def __calcP(self, phi: FloatArray2D) -> None:
         """Updates the covariance matrix P.
@@ -387,8 +390,54 @@ class RLS(Function):
         Args:
             phi (FloatArray2D): Regressor vector of shape (n, 1).
         """        
-        self.P = self.P - self.P @ phi @ phi.T @ self.P / (1 + phi.T @ self.P @ phi)
+        self.P = (self.P - self.P @ phi @ phi.T @ self.P / (self.discount + phi.T @ self.P @ phi)) / self.discount
+
+
+class DFRLS(RLS):
+
+    def __init__(self, theta_init: FloatArray2D, P_init: FloatArray2D, epsilon: float, discount: float = 1.0) -> None:
+        super().__init__(theta_init, P_init, discount)
+        assert epsilon > 0, f"epsilon must be positive; epsilon={epsilon}"
+        self.epsilon: float = epsilon
+
+        self.R = np.linalg.inv(P_init)
+    
+    def __calcF(self, phi: FloatArray2D) -> np.ndarray:
+        if np.linalg.norm(phi) > self.epsilon:
+            M = (1-self.discount) * (self.R @ phi @ phi.T)/(phi.T @ self.R @ phi)
+        else:
+            M = np.zeros_like(self.R)
+        return np.eye(self.R.shape[0]) - M
+    
+    def __calcR(self, phi: FloatArray2D) -> None:
+        F = self.__calcF(phi)
+        self.R = F @ self.R + phi @ phi.T
+    
+    def __calcP(self, phi: FloatArray2D) -> None:
+        if np.linalg.norm(phi) > self.epsilon:
+            modified_P = self.P + (1-self.discount)/self.discount * (phi @ phi.T)/(phi.T @ self.R @ phi)
+        else:
+            modified_P = self.P
         
+        self.P = modified_P - (modified_P @ phi @ phi.T @ modified_P) / (1 + phi.T @ modified_P @ phi)
+    
+    def __calcTheta(self, phi: FloatArray2D, y: float) -> None:
+        self.theta = self.theta + self.P @ phi * (y - phi.T @ self.theta)
+            
+        
+    def forward(self, inputs):
+        phi = inputs[0]
+        y = inputs[1]
+        
+        self.__calcP(phi)
+        self.__calcTheta(phi, y)
+        self.__calcR(phi)
+        
+
+        return (self.theta, )
+
+
+
 if __name__ == "__main__":
     system = QtransferFunc(num=np.array([0.2]), den=np.array([-0.8]))
 

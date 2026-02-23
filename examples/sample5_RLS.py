@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import identctrl.identification as ident
 from pprint import pprint
 
-time: np.ndarray = np.arange(0, 50, dtype=float)
+time: np.ndarray = np.arange(0, 100, dtype=float)
 u: np.ndarray = 0.5*np.sin(2*np.pi*time*0.025) + 0.3*np.sin(2*np.pi*time*0.04+0.1) + 0.7*np.sin(2*np.pi*time*0.056 + 0.3)
 
 plant: ident.QtransferFunc = ident.QtransferFunc(num=np.array([1, -0.1, -0.2]), den=np.array([-0.1, -0.44, 0.084]), delay=0, predict=True)
@@ -15,7 +15,7 @@ init_parameter: np.ndarray = model.parameter
 # 初期共分散行列
 init_P: np.ndarray = np.diag(np.ones_like(init_parameter).reshape(-1))
 
-estimator: ident.RLS = ident.RLS(theta_init=init_parameter, P_init=init_P)
+estimator: ident.RLS = ident.RLS(theta_init=init_parameter, P_init=init_P, discount=0.8)
 
 
 parameter_history: np.ndarray = np.full_like(np.zeros((len(init_parameter), len(time))), np.nan)
@@ -30,7 +30,7 @@ for step in range(len(time)-1):
     # モデルに推定パラメータを設定
     model.parameter = estimated_parameter
     y_est[step+1] = model.forward([u[step]])[0]
-    y[step+1] = plant.forward([u[step]])[0]
+    y[step+1] = plant.forward([u[step]])[0] + 0.01*np.random.randn()
 
 
 fig = plt.figure(figsize=(8, 6))

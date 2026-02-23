@@ -193,7 +193,7 @@ ax_bottom.set_xlabel("step [-]")
 ax_bottom.set_ylabel("input [-]")
 ax_bottom.grid()
 ax_bottom.legend()
-fig.savefig("./examples/figure/example5_ident2.svg", format="svg", transparent=True)
+fig.savefig("./examples/figure/example4_ident2.svg", format="svg", transparent=True)
 
 fig = plt.figure(figsize=(8, 6))
 ax = fig.add_subplot(1, 1, 1)
