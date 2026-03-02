@@ -33,3 +33,7 @@ Thumbs.db
 
 # figure
 /examples/figure/**/
+
+
+# 非公開
+/src/identctrl/private_identification.py
