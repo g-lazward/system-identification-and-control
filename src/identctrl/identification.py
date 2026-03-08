@@ -191,6 +191,12 @@ class QtransferFunc(Function):
     def regressor(self) -> FloatArray2D:
         return self.__regressor
     
+    @regressor.setter
+    def regressor(self, phi: FloatArray2D) -> None:
+        if self.__regressor.shape != phi.shape:
+            raise ValueError(f"regressorの形状が不正です. regressor:{self.__regressor.shape}, phi:{phi.shape}")
+        self.__regressor = phi
+    
     @property
     def parameter(self) -> FloatArray2D:
         """
@@ -392,9 +398,91 @@ class RLS(Function):
         """        
         self.P = (self.P - self.P @ phi @ phi.T @ self.P / (self.discount + phi.T @ self.P @ phi)) / self.discount
 
+    def forward(self, inputs: Inputs) -> Outputs:
+        """Performs one RLS update step.
+
+        Args:
+            inputs (Inputs): Tuple containing:
+                - phi (FloatArray2D): Regressor vector of shape (n, 1).
+                - y (float): Measured output scalar.
+
+        Returns:
+            Outputs: Tuple containing updated parameter vector (theta,).
+        """        
+        phi = inputs[0]
+        y = inputs[1]
+        
+        self.__calcTheta(phi, y)
+        self.__calcP(phi)
+
+        return (self.theta, )
+
+
+
+class MFRLS(RLS):
+    """
+    Bruce, Adam L., Ankit Goel, and Dennis S. Bernstein. 
+    "Recursive least squares with matrix forgetting."
+    2020 American Control Conference (ACC). IEEE, 2020.
+
+    """
+    def __init__(self, theta_init: FloatArray2D, P_init: FloatArray2D, discount: float) -> None:
+        super().__init__(theta_init, P_init, discount)    
+    
+    def __calcTheta(self, phi: FloatArray2D, y: float) -> None:
+        """Updates the parameter vector theta.
+
+        Args:
+            phi (FloatArray2D): Regressor vector of shape (n, 1).
+            y (float): Measured output scalar.
+        """        
+        self.theta = self.theta + self.P @ phi * (y - phi.T @ self.theta)
+    
+    def __calcP(self, phi: FloatArray2D) -> None:
+        """Updates the covariance matrix P.
+
+        Args:
+            phi (FloatArray2D): Regressor vector of shape (n, 1).
+        """
+        sigma, U = np.linalg.eigh(self.P)
+        psi = (phi.T @ U).reshape(-1)
+        # ノイズレベルに応じた閾値を設定
+        esp = 1e-2
+        
+        diag = np.zeros_like(psi)
+        for i in range(len(psi)):
+            diag[i] = np.sqrt(self.discount) if np.linalg.norm(psi[i]) > esp else 1.0
+        Lambda = np.diag(1/diag)
+
+        B = U @ Lambda @ U.T
+        L = B @ self.P @ B.T
+        self.P = L - (L @ phi @ phi.T @ L)/ (1.0 + phi.T @ L @ phi)
+        
+    def forward(self, inputs: Inputs) -> Outputs:
+        """Performs one RLS update step.
+
+        Args:
+            inputs (Inputs): Tuple containing:
+                - phi (FloatArray2D): Regressor vector of shape (n, 1).
+                - y (float): Measured output scalar.
+
+        Returns:
+            Outputs: Tuple containing updated parameter vector (theta,).
+        """        
+        phi = inputs[0]
+        y = inputs[1]
+        
+        self.__calcP(phi)
+        self.__calcTheta(phi, y)
+
+        return (self.theta, )
 
 class DFRLS(RLS):
-
+    """
+    Cao, Liyu, and Howard Schwartz. 
+    "A directional forgetting algorithm based on the decomposition of the information matrix." 
+    Automatica 36.11 (2000): 1725-1731.
+    """
     def __init__(self, theta_init: FloatArray2D, P_init: FloatArray2D, epsilon: float, discount: float = 1.0) -> None:
         super().__init__(theta_init, P_init, discount)
         assert epsilon > 0, f"epsilon must be positive; epsilon={epsilon}"
