@@ -37,3 +37,109 @@ def pSpectrum(input: FloatArray1D, fs: float,
     p: np.ndarray = (np.abs(fft_result)**2) / N
     
     return f, p
+
+
+
+
+def lowProjRegressor(regressor_matrix: np.ndarray, components: int, method: str = "svd") -> np.ndarray:
+    """
+    regressor_matrix: shape (n, T)
+    method: "svd"
+    """
+    # 有効な時刻だけ取り出す
+    valid_mask = ~np.isnan(regressor_matrix).any(axis=0)
+    X = regressor_matrix[:, valid_mask].T
+
+    match method:
+        case "svd":
+            # 平均を引く
+            X_centered = X - np.mean(X, axis=0, keepdims=True)
+            # SVD
+            U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
+
+            # 2次元へ射影
+            Z = X_centered @ Vt[:components].T   # shape: (サンプル数, 2)
+
+            return Z
+        
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def plotRegressor(Z: np.ndarray, animate: bool = False, show: bool = False) -> None:
+    """
+    低次元に射影されたリグレッサをプロットする
+
+    Parameters
+    ----------
+    Z : np.ndarray
+        shape (T, d) の低次元データ (d=2 or 3)
+    animate : bool
+        時系列アニメーション表示
+    """
+
+    dim = Z.shape[1]
+
+    if dim not in (2, 3):
+        raise ValueError("Z must be 2D or 3D")
+
+    if dim == 2:
+        fig, ax = plt.subplots(figsize=(6, 6))
+
+        if not animate:
+            sc = ax.scatter(Z[:, 0], Z[:, 1], c=np.arange(len(Z)), cmap="viridis", s=10)
+            plt.colorbar(sc, ax=ax, label="sample index")
+
+        else:
+            from matplotlib.animation import FuncAnimation
+            sc = ax.scatter([], [], s=10)
+
+            def update(frame):
+
+                sc.set_offsets(Z[:frame+1, :2])
+                sc.set_array(np.arange(frame+1))
+                return sc,
+
+            animation = FuncAnimation(fig, update, frames=len(Z), interval=30)
+        ax.set_xlim(-20, 20)
+        ax.set_ylim(-20, 20)
+        ax.set_xlabel("dim1")
+        ax.set_ylabel("dim2")
+
+    else:
+        from mpl_toolkits.mplot3d import Axes3D
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot(111, projection="3d")
+
+        if not animate:
+            sc = ax.scatter(Z[:, 0], Z[:, 1], Z[:, 2], c=np.arange(len(Z)), cmap="viridis", s=10)
+            plt.colorbar(sc, ax=ax, label="sample index")
+
+        else:
+            from matplotlib.animation import FuncAnimation
+            sc = ax.scatter([], [], [], s=10)
+
+            def update(frame):
+                x = Z[:frame+1, 0]
+                y = Z[:frame+1, 1]
+                z = Z[:frame+1, 2]
+
+                sc._offsets3d = (x, y, z)
+                # ax.view_init(elev=25, azim=frame * 0.8)
+                return sc,
+
+            animation = FuncAnimation(fig, update, frames=len(Z), interval=30)
+
+        min, max = -20, 20
+        ax.set_xlim(min, max)
+        ax.set_ylim(min, max)
+        ax.set_zlim(min, max)
+
+        ax.set_xlabel("dim1")
+        ax.set_ylabel("dim2")
+        ax.set_zlabel("dim3")
+        
+
+    if show:
+      plt.show()
+    return animation if animate else fig
