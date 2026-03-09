@@ -66,7 +66,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plotRegressor(Z: np.ndarray, animate: bool = False, show: bool = False) -> None:
+def plotRegressor(Z: np.ndarray, lim: list = [-10, 10], animate: bool = False, show: bool = False, title: str = None) -> None:
     """
     低次元に射影されたリグレッサをプロットする
 
@@ -85,6 +85,7 @@ def plotRegressor(Z: np.ndarray, animate: bool = False, show: bool = False) -> N
 
     if dim == 2:
         fig, ax = plt.subplots(figsize=(6, 6))
+        ax.set_title(title)
 
         if not animate:
             sc = ax.scatter(Z[:, 0], Z[:, 1], c=np.arange(len(Z)), cmap="viridis", s=10)
@@ -101,8 +102,8 @@ def plotRegressor(Z: np.ndarray, animate: bool = False, show: bool = False) -> N
                 return sc,
 
             animation = FuncAnimation(fig, update, frames=len(Z), interval=30)
-        ax.set_xlim(-20, 20)
-        ax.set_ylim(-20, 20)
+        ax.set_xlim(lim[0], lim[1])
+        ax.set_ylim(lim[0], lim[1])
         ax.set_xlabel("dim1")
         ax.set_ylabel("dim2")
 
@@ -110,6 +111,7 @@ def plotRegressor(Z: np.ndarray, animate: bool = False, show: bool = False) -> N
         from mpl_toolkits.mplot3d import Axes3D
         fig = plt.figure(figsize=(7, 7))
         ax = fig.add_subplot(111, projection="3d")
+        ax.set_title(title)
 
         if not animate:
             sc = ax.scatter(Z[:, 0], Z[:, 1], Z[:, 2], c=np.arange(len(Z)), cmap="viridis", s=10)
@@ -125,12 +127,12 @@ def plotRegressor(Z: np.ndarray, animate: bool = False, show: bool = False) -> N
                 z = Z[:frame+1, 2]
 
                 sc._offsets3d = (x, y, z)
-                # ax.view_init(elev=25, azim=frame * 0.8)
+                ax.view_init(elev=25, azim=frame * 0.8)
                 return sc,
 
             animation = FuncAnimation(fig, update, frames=len(Z), interval=30)
 
-        min, max = -20, 20
+        min, max = lim
         ax.set_xlim(min, max)
         ax.set_ylim(min, max)
         ax.set_zlim(min, max)
@@ -139,7 +141,6 @@ def plotRegressor(Z: np.ndarray, animate: bool = False, show: bool = False) -> N
         ax.set_ylabel("dim2")
         ax.set_zlabel("dim3")
         
-
     if show:
       plt.show()
     return animation if animate else fig

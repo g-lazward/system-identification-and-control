@@ -26,7 +26,7 @@ env/
 Thumbs.db
 
 # 実験フォルダー
-/tests/**/*.py
+/tests/**/*
 
 # データフォルダ
 /examples/data/**/
