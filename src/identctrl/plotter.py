@@ -1,8 +1,9 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Union, Tuple
-
-from identctrl.types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D
+from identctrl.ident_types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float
 
 def pSpectrum(input: FloatArray1D, fs: float, 
               detrend: bool = True, window: str = "None")->Tuple[FloatArray1D, FloatArray1D]:
@@ -66,7 +67,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plotRegressor(Z: np.ndarray, lim: list = [-10, 10], animate: bool = False, show: bool = False, title: str = None) -> None:
+def plotRegressor(Z: np.ndarray, lim: list = [-10, 10], animate: bool = False, show: bool = False, title: str = None)-> Union[plt.Figure, FuncAnimation]:
     """
     低次元に射影されたリグレッサをプロットする
 
@@ -92,14 +93,12 @@ def plotRegressor(Z: np.ndarray, lim: list = [-10, 10], animate: bool = False, s
             plt.colorbar(sc, ax=ax, label="sample index")
 
         else:
-            from matplotlib.animation import FuncAnimation
-            sc = ax.scatter([], [], s=10)
-
+            sc = ax.scatter([], [], s=10, c=[], cmap="viridis", vmin=0, vmax=len(Z)-1)
             def update(frame):
-
-                sc.set_offsets(Z[:frame+1, :2])
+                pts = Z[:frame+1, :2]
+                sc.set_offsets(pts)
                 sc.set_array(np.arange(frame+1))
-                return sc,
+                return (sc,)
 
             animation = FuncAnimation(fig, update, frames=len(Z), interval=30)
         ax.set_xlim(lim[0], lim[1])
@@ -108,7 +107,7 @@ def plotRegressor(Z: np.ndarray, lim: list = [-10, 10], animate: bool = False, s
         ax.set_ylabel("dim2")
 
     else:
-        from mpl_toolkits.mplot3d import Axes3D
+        
         fig = plt.figure(figsize=(7, 7))
         ax = fig.add_subplot(111, projection="3d")
         ax.set_title(title)
@@ -118,7 +117,7 @@ def plotRegressor(Z: np.ndarray, lim: list = [-10, 10], animate: bool = False, s
             plt.colorbar(sc, ax=ax, label="sample index")
 
         else:
-            from matplotlib.animation import FuncAnimation
+            
             sc = ax.scatter([], [], [], s=10)
 
             def update(frame):
@@ -144,3 +143,84 @@ def plotRegressor(Z: np.ndarray, lim: list = [-10, 10], animate: bool = False, s
     if show:
       plt.show()
     return animation if animate else fig
+
+def plotRegressorOnCircle(Z: np.ndarray, magnitude: np.ndarray | None = None, title: str = None):
+    
+    dim = Z.shape[1]
+
+    if dim not in (2, 3):
+        raise ValueError("Z must be 2D or 3D")
+
+    if dim == 2:
+        eps = 1e-12
+        norm = np.linalg.norm(Z, axis=1, keepdims=True)
+        Z_unit = Z / (norm + eps)
+
+        if magnitude is None:
+            magnitude = norm[:, 0]
+
+        fig, ax = plt.subplots(figsize=(7, 7))
+
+        # 単位円
+        theta = np.linspace(0, 2*np.pi, 400)
+        ax.plot(np.cos(theta), np.sin(theta), linestyle="dashed")
+
+        sc = ax.scatter(
+            Z_unit[:,0],
+            Z_unit[:,1],
+            c=magnitude,
+            cmap="viridis",
+            s=20
+        )
+        
+
+        ax.set_xlim(-1.1, 1.1)
+        ax.set_ylim(-1.1, 1.1)
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_title(title)
+
+        cbar = plt.colorbar(sc, ax=ax, shrink=0.7)
+        cbar.set_label("magnitude")
+    else:
+        eps = 1e-12
+        norm = np.linalg.norm(Z, axis=1, keepdims=True)
+        Z_unit = Z / (norm + eps)
+
+        if magnitude is None:
+            magnitude = norm[:, 0]
+
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot(111, projection="3d")
+        ax.set_title(title)
+
+        sc = ax.scatter(
+            Z_unit[:, 0],
+            Z_unit[:, 1],
+            Z_unit[:, 2],
+            c=magnitude,
+            cmap="viridis",
+            s=20
+        )
+
+        # 単位球を描く
+        u = np.linspace(0, 2*np.pi, 40)
+        v = np.linspace(0, np.pi, 40)
+
+        x = np.outer(np.cos(u), np.sin(v))
+        y = np.outer(np.sin(u), np.sin(v))
+        z = np.outer(np.ones_like(u), np.cos(v))
+
+        ax.plot_surface(
+            x, y, z,
+            color="gray",
+            alpha=0.1,
+            linewidth=0.2,
+            zorder=0
+        )
+
+        ax.set_xlim(-1.1, 1.1)
+        ax.set_ylim(-1.1, 1.1)
+        ax.set_zlim(-1.1, 1.1)
+        ax.set_box_aspect([1,1,1])
+    return fig

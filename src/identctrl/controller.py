@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 from typing import Union
 from dataclasses import dataclass
 from identctrl import identification as ident
-from identctrl.types import FloatArray1D, FloatArray2D
+from identctrl.ident_types import FloatArray1D, FloatArray2D
 
 from cvxopt import matrix
 from cvxopt.solvers import qp

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from typing import Tuple
-from identctrl.types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float, Inputs, Outputs
+from identctrl.ident_types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float, Inputs, Outputs
 
 # main関数内のプロットに使用
 import matplotlib.pyplot as plt

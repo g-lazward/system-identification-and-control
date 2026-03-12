@@ -7,7 +7,7 @@ from scipy import signal
 
 from sample2 import square_signal
 from typing import Union
-from identctrl.types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float, Inputs, Outputs
+from identctrl.ident_types import FloatArray1D, FloatArray2D, _assert_1D_float, _assert_2D_float, Inputs, Outputs
 Scalar = Union[float, np.floating]
 
 # 制御対象
