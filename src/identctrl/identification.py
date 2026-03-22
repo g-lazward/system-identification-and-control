@@ -294,35 +294,6 @@ class QtransferFunc(Function):
         self.output_buf[:] = 0.0
 
 
-class BJ(Function):
-    
-    def __init__(self, B: FloatArray1D, F: FloatArray1D, C: FloatArray1D, D: FloatArray1D, delay:int=0)->None:
-        self.G = QtransferFunc(num=B, den=F, delay=delay, predict=True)
-        self.H = QtransferFunc(num=C, den=D, delay=0, predict=True)
-
-        self.__parameter: FloatArray2D = np.vstack([self.G.parameter, self.H.parameter])
-
-    @property
-    def parameter(self) -> FloatArray2D:
-        return np.vstack([self.G.parameter, self.H.parameter])
-    
-    @parameter.setter
-    def parameter(self, param: FloatArray2D) -> None:
-        B_dim = self.G.num.shape[0]
-        F_dim = self.G.den.shape[0]
-        C_dim = self.H.num.shape[0]
-        D_dim = self.H.den.shape[0]
-
-        self.G.parameter = param[0:B_dim+F_dim]
-        self.H.parameter = param[B_dim+F_dim:B_dim+F_dim+C_dim+D_dim]
-    
-    def forward(self, inputs: Inputs)-> Outputs:
-        # 入力の取り出し
-        u = inputs[0]
-        e = inputs[1]
-
-        return self.G(u) + self.H(e)
-
 class RLS(Function):
     """Recursive Least Squares (RLS) estimator.
 

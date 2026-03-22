@@ -5,5 +5,8 @@ from .identification import QtransferFunc, BJ, Function
 __all__ = [
     "FloatArray1D", "FloatArray2D",
     "MPC", "SimplePIDController",
-    "QtransferFunc", "BJmodel", "Function",
+    "QtransferFunc", "Function",
+    "RLS", "MFRLS", "DFRLS",
+    "pSpectrum", "lowProjRegressor", "plotRegressor", "plotRegressorOnCircle",
+    "DFCLRLS", "TLFRLS"
 ]
