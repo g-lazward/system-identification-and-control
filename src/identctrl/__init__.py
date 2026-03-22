@@ -1,6 +1,6 @@
 from .ident_types import FloatArray1D, FloatArray2D
 from .controller import MPC, SimplePIDController
-from .identification import QtransferFunc, BJ, Function
+from .identification import QtransferFunc, Function
 
 __all__ = [
     "FloatArray1D", "FloatArray2D",

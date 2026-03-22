@@ -336,8 +336,6 @@ class MPC(ident.Function):
         
         return [self.u, self.state]
 
-
-
 class SimplePIDController(ident.Function):
     """
     単純なPID制御器クラス。
